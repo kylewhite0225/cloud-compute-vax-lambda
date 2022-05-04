@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "S3VaxUploader": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Users\\Kylew\\Dropbox\\CS455 - Cloud Computing\\Projects\\Project 1\\TestFiles\\site1.xml\" xml"
+    }
+  }
+}

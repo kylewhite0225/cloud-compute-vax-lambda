@@ -35,10 +35,11 @@ public class S3VaxUploader
         string type = args[1];
         
         // Check if it matches the two accepted filetypes.
-        if (type != "xml" || type != "json")
+        if (!String.Equals(type, "xml") && !String.Equals(type, "json"))
         {
             // Throw an exception if it does not match.
             throw new ArgumentException("Type must be equal to 'xml' or 'json'");
+            // Console.WriteLine("Type must be equal to 'xml' or 'json'");
         }
 
         // If the arguments pass checks, use UploadFile method
@@ -85,7 +86,7 @@ public class S3VaxUploader
             PutObjectRequest putRequest = new PutObjectRequest
             {
                 BucketName = bucketName,
-                Key = keyName,
+                //Key = keyName,
                 FilePath = filePath,
                 ContentType = type
             };
