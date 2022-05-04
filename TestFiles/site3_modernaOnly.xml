@@ -7,7 +7,7 @@
         <brand name="Moderna">
 	    <total>500</total>
             <firstShot>350</firstShot>
-            <secondtShot>150</secondtShot>
+            <secondShot>150</secondShot>
         </brand>
     </vaccines>
 </data>

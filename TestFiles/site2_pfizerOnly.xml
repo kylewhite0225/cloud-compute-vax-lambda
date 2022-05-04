@@ -7,7 +7,7 @@
         <brand name="Pfizer">
 	    <total>1050</total>
             <firstShot>800</firstShot>
-            <secondtShot>250</secondtShot>
+            <secondShot>250</secondShot>
         </brand>
     </vaccines>
 </data>

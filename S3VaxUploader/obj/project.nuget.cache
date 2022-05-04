@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "Ah6qQIwts8ZIgtcXGFj54QS05JeZ3Lh3kcfT/7BbpCUjPaPX21aDXmeUqeDRR6dffRRCfBz0jI9lEzWxVz7ueA==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Kylew\\Dropbox\\CS455 - Cloud Computing\\Projects\\Project 1\\S3VaxUploader\\S3VaxUploader.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Kylew\\.nuget\\packages\\awssdk.core\\3.7.10.14\\awssdk.core.3.7.10.14.nupkg.sha512",
+    "C:\\Users\\Kylew\\.nuget\\packages\\awssdk.s3\\3.7.8.26\\awssdk.s3.3.7.8.26.nupkg.sha512"
+  ],
+  "logs": []
+}

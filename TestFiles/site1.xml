@@ -12,7 +12,7 @@
         <brand name="Moderna">
 	    <total>420</total>
             <firstShot>300</firstShot>
-            <secondtShot>120</secondtShot>
+            <secondShot>120</secondShot>
         </brand>
     </vaccines>
 </data>
