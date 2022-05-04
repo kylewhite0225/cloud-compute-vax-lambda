@@ -17,7 +17,7 @@ public class S3VaxUploader
         // Check if the input arguments array contains the proper number of arguments
         if (args.Length != 2)
         {
-            Console.WriteLine("Please enter the file path followed by xml or json data type.");
+            throw new ArgumentException("Required arguments: file-path data-type");
         }
 
         // Capture path from args array
@@ -43,7 +43,7 @@ public class S3VaxUploader
         }
 
         // If the arguments pass checks, use UploadFile method
-        UploadFile(path, "test-bucket-cc", "test-file", type);
+        UploadFile(path, "vaccine-bucket", "test-file", type);
 
 
 
@@ -92,6 +92,7 @@ public class S3VaxUploader
             };
 
             PutObjectResponse response = await s3Client.PutObjectAsync(putRequest);
+            Console.WriteLine(response.ToString());
         }
         catch (AmazonS3Exception e)
         {
@@ -107,5 +108,7 @@ public class S3VaxUploader
                 throw new Exception("Error occurred: " + e.Message);
             }
         }
+
+        s3Client.Dispose();
     }
 }
