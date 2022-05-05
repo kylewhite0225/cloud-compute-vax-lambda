@@ -2,7 +2,7 @@
   "profiles": {
     "S3VaxUploader": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\Kylew\\Desktop\\site4.json json"
+      "commandLineArgs": "C:\\Users\\Kylew\\Desktop\\site1.xml xml"
     }
   }
 }

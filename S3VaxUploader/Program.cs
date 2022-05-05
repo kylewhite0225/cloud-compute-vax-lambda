@@ -12,7 +12,7 @@ using Amazon.Runtime.CredentialManagement;
 
 public class S3VaxUploader
 {
-    static async Task Main(string[] args)
+    static void Main(string[] args)
     {
         // Check if the input arguments array contains the proper number of arguments
         if (args.Length != 2)
@@ -43,7 +43,7 @@ public class S3VaxUploader
         }
 
         // If the arguments pass checks, use UploadFile method
-        Task task = await UploadFile(path, "vaccine-bucket", "test-file", type);
+        UploadFile(path, "vaccine-bucket", "test-file", type).Wait();
         Console.WriteLine("File uploading completed.");
     }
 
@@ -71,7 +71,7 @@ public class S3VaxUploader
         return AWSCredentialsFactory.GetAWSCredentials(profile, new SharedCredentialsFile());
     }
 
-    private static async Task<Task> UploadFile(string filePath, string bucketName, string keyName, string type)
+    private static async Task UploadFile(string filePath, string bucketName, string keyName, string type)
     {
         
         // If the arguments pass checks, create credentials file and S3Client objects
@@ -93,7 +93,7 @@ public class S3VaxUploader
             Console.WriteLine("File Uploaded.");
 
             s3Client.Dispose();
-            return Task.CompletedTask;
+            // return Task.CompletedTask;
         }
         catch (AmazonS3Exception e)
         {
