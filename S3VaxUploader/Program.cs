@@ -86,18 +86,14 @@ public class S3VaxUploader
                 BucketName = bucketName,
                 //Key = keyName,
                 FilePath = filePath,
-                ContentType = type
+                ContentType = "text/" + type
             };
 
             PutObjectResponse response = await s3Client.PutObjectAsync(putRequest);
             Console.WriteLine("File Uploaded.");
 
-            // await s3Client.PutObjectAsync(putRequest).ConfigureAwait(false);
-
             s3Client.Dispose();
-
             return Task.CompletedTask;
-
         }
         catch (AmazonS3Exception e)
         {
