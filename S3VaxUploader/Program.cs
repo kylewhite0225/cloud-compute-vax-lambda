@@ -12,7 +12,7 @@ using Amazon.Runtime.CredentialManagement;
 
 public class S3VaxUploader
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         // Check if the input arguments array contains the proper number of arguments
         if (args.Length != 2)
@@ -43,10 +43,8 @@ public class S3VaxUploader
         }
 
         // If the arguments pass checks, use UploadFile method
-        UploadFile(path, "vaccine-bucket", "test-file", type);
-
-
-
+        Task task = await UploadFile(path, "vaccine-bucket", "test-file", type);
+        Console.WriteLine("File uploading completed.");
     }
 
     /// <summary>
@@ -73,7 +71,7 @@ public class S3VaxUploader
         return AWSCredentialsFactory.GetAWSCredentials(profile, new SharedCredentialsFile());
     }
 
-    private static async void UploadFile(string filePath, string bucketName, string keyName, string type)
+    private static async Task<Task> UploadFile(string filePath, string bucketName, string keyName, string type)
     {
         
         // If the arguments pass checks, create credentials file and S3Client objects
@@ -92,7 +90,14 @@ public class S3VaxUploader
             };
 
             PutObjectResponse response = await s3Client.PutObjectAsync(putRequest);
-            Console.WriteLine(response.ToString());
+            Console.WriteLine("File Uploaded.");
+
+            // await s3Client.PutObjectAsync(putRequest).ConfigureAwait(false);
+
+            s3Client.Dispose();
+
+            return Task.CompletedTask;
+
         }
         catch (AmazonS3Exception e)
         {
@@ -108,7 +113,5 @@ public class S3VaxUploader
                 throw new Exception("Error occurred: " + e.Message);
             }
         }
-
-        s3Client.Dispose();
     }
 }
