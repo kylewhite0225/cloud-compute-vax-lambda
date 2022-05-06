@@ -71,10 +71,23 @@ public class Function
                 // Create stream to get object from S3
                 Stream stream = await S3Client.GetObjectStreamAsync(bucketName, objectKey, null);
 
-                // Create content which will contain the contents of the file itself
-                string content;
+                // Create jsonString string which will contain the contents of the file itself
+                string jsonString;
 
-                // 
+                // Using StreamReader and the previously created stream
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    // Populate the jsonString string
+                    jsonString = reader.ReadToEnd();
+                    // Close reader
+                    reader.Close();
+                }
+
+                JsonSerializerOptions options = new JsonSerializerOptions();
+                options.WriteIndented = true; // to make the JSON look pretty
+
+                // Parse JSON
+                JsonParseUploader(jsonString);
             }
             catch (Exception e)
             {
@@ -84,8 +97,6 @@ public class Function
                 throw;
             }
 
-            // Parse JSON
-            // JsonParseUploader(doc);
 
         } else if (strType == @"text/xml")
         {
@@ -151,7 +162,8 @@ public class Function
         // Parse XML
 
         // Create NpgsqlConnection and upload using 
-        // var cmd = new NpgsqlCommand(@"INSERT INTO ... VALUES ...")
+        // var cmd = new NpgsqlCommand(@"INSERT INTO sites VALUES siteid name zipcode");
+        // var cmd2 = new NpgsqlCommand(@"INSERT INTO data VALUES siteid date firstshot secondshot");
 
         // cmd.ExecuteNonQuery();
 
@@ -162,43 +174,56 @@ public class Function
     /// <summary>
     /// Parses the JSON file obtained from the s3Event and inserts the data into RDS using Npgsql.
     /// </summary>
-    private async Task JsonParseUploader(JsonDocument doc)
+    private async Task JsonParseUploader(string doc)
     {
-        //TODO
+        // TODO
         // Parse JSON and form SQL command
-        
-        // Form NpgsqlCommand
-        // var cmd = new NpgsqlCommand(@"INSERT INTO ... VALUES ...");
-        
+
         try
         {
-            // Create NpgsqlConnection
-            NpgsqlConnection conn = OpenConnection();
+            VaxRecord vax = JsonSerializer.Deserialize<VaxRecord>(doc);
+            // Form NpgsqlCommand
+            string command = String.Format("INSERT INTO sites VALUES {0} {1} {2}", vax.SideID, vax.Name, vax.ZipCode);
+            var cmd = new NpgsqlCommand(command);
 
-            // If connection was successful
-            if (conn.State == ConnectionState.Open)
+            string command2 = String.Format("INSERT INTO data VALUES {0} {1} {2} {3}", vax.SideID, vax.Date, vax.FirstShot,
+                vax.SecondShot);
+            var cmd2 = new NpgsqlCommand(command2);
+            try
             {
-                // Execute the command 
-                // cmd.ExecuteNonQuery();
+                // Create NpgsqlConnection
+                NpgsqlConnection conn = OpenConnection();
 
-                // Close and dispose of the connection
-                conn.Close();
-                conn.Dispose();
+                // If connection was successful
+                if (conn.State == ConnectionState.Open)
+                {
+                    // Execute the command 
+                    cmd.ExecuteNonQuery();
+                    cmd2.ExecuteNonQuery();
+
+                    // Close and dispose of the connection
+                    conn.Close();
+                    conn.Dispose();
+                }
+                else
+                {
+                    Console.WriteLine("Failed to open a connection to the database. Connection state: {0}",
+                        Enum.GetName(typeof(ConnectionState), conn.State));
+                }
+
             }
-            else
+            catch (NpgsqlException e)
             {
-                Console.WriteLine("Failed to open a connection to the database. Connection state: {0}",
-                    Enum.GetName(typeof(ConnectionState), conn.State));
+                Console.WriteLine("Npgsql Error: {0}", e.Message);
             }
-
-        }
-        catch (NpgsqlException e)
-        {
-            Console.WriteLine("Npgsql Error: {0}", e.Message);
+            catch (Exception e)
+            {
+                Console.WriteLine("Error: {0}", e.Message);
+            }
         }
         catch (Exception e)
         {
-            Console.WriteLine("Error: {0}", e.Message);
+            Console.WriteLine(e.Message);
         }
     }
 

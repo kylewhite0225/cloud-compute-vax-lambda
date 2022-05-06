@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "1M3YuahQjv5b2Z080e/YxcDiz1K71af3ODxqJYQVEEBpoOZ76I/PK8Bm07+txDIaVbpkHs8Yelo0TDt5/B6fZQ==",
+  "dgSpecHash": "EvsmTq/VPm2i1DcGjkV81/eVlyXZ7/rTmFTkYWug+grKsJCuEk6vMsyrxuQWuWKwURhI1cyNRTH33Kc/0+qfhw==",
   "success": true,
   "projectFilePath": "C:\\Users\\Kylew\\Dropbox\\CS455 - Cloud Computing\\Projects\\Project 1\\ParseDB\\ParseDB.csproj",
   "expectedPackageFiles": [
@@ -11,7 +11,7 @@
     "C:\\Users\\Kylew\\.nuget\\packages\\awssdk.s3\\3.7.8.10\\awssdk.s3.3.7.8.10.nupkg.sha512",
     "C:\\Users\\Kylew\\.nuget\\packages\\npgsql\\6.0.4\\npgsql.6.0.4.nupkg.sha512",
     "C:\\Users\\Kylew\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\6.0.0\\system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
-    "C:\\Users\\Kylew\\.nuget\\packages\\microsoft.netcore.app.crossgen2.win-x64\\6.0.3\\microsoft.netcore.app.crossgen2.win-x64.6.0.3.nupkg.sha512"
+    "C:\\Users\\Kylew\\.nuget\\packages\\microsoft.netcore.app.crossgen2.win-x64\\6.0.4\\microsoft.netcore.app.crossgen2.win-x64.6.0.4.nupkg.sha512"
   ],
   "logs": []
 }
