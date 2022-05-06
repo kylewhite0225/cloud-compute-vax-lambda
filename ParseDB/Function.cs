@@ -55,8 +55,10 @@ public class Function
 
         string bucketName = s3Event.Bucket.Name;
         string objectKey = s3Event.Object.Key;
+        // vvv This might have to change to GetObjectTaggingRequest vvv
         Type objectType = s3Event.Object.GetType();
         string strType = objectType.ToString();
+        // ^^^                                                      ^^^
 
         // TODO
         // Get the object itself from S3 so we can parse it, we did this in Module 10
@@ -83,10 +85,11 @@ public class Function
                     reader.Close();
                 }
 
+                // Use JsonSerializerOptions to format the JSON
                 JsonSerializerOptions options = new JsonSerializerOptions();
                 options.WriteIndented = true; // to make the JSON look pretty
 
-                // Parse JSON
+                // Pass string into JsonParseUploader method
                 JsonParseUploader(jsonString);
             }
             catch (Exception e)
@@ -181,11 +184,14 @@ public class Function
 
         try
         {
+            // Use JsonSerializer to deserialize the JSON string into a VaxRecord object
             VaxRecord vax = JsonSerializer.Deserialize<VaxRecord>(doc);
-            // Form NpgsqlCommand
+
+            // Form NpgsqlCommand using the VaxRecord object members
             string command = String.Format("INSERT INTO sites VALUES {0} {1} {2}", vax.SideID, vax.Name, vax.ZipCode);
             var cmd = new NpgsqlCommand(command);
 
+            // Form second NpgsqlCommand using the VaxRecord object members
             string command2 = String.Format("INSERT INTO data VALUES {0} {1} {2} {3}", vax.SideID, vax.Date, vax.FirstShot,
                 vax.SecondShot);
             var cmd2 = new NpgsqlCommand(command2);
@@ -233,7 +239,7 @@ public class Function
     private NpgsqlConnection OpenConnection()
     {
         // TODO
-        // Update endpoint and other parameters to vax DB
+        // vvv Update endpoint and other parameters to vax DB vvv
         string endpoint = "mod12pginstance.cytiilpumzjl.us-east-1.rds.amazonaws.com";
 
         string connString = "Server=" + endpoint + ";" +
@@ -242,6 +248,8 @@ public class Function
                             "User ID=postgres;" +
                             "password=cs455pass;" +
                             "Timeout=15";
+        // ^^^                                                ^^^
+        
         NpgsqlConnection conn = new NpgsqlConnection(connString);
         conn.Open();
         return conn;
