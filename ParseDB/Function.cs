@@ -1,7 +1,13 @@
+using System.Data;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.S3Events;
 using Amazon.S3;
 using Amazon.S3.Util;
+using System.Xml;
+using System.IO;
+using System.Text;
+using Npgsql;
+using System.Data;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -46,6 +52,55 @@ public class Function
             return null;
         }
 
+        string bucketName = s3Event.Bucket.Name;
+        string objectKey = s3Event.Object.Key;
+        Type objectType = s3Event.Object.GetType();
+        string strType = objectType.ToString();
+
+        // TODO
+        // Get the object itself from S3 so we can parse it, we did this in Module 10
+
+        if (strType == @"text/json")
+        {
+            // TODO 
+            // GET FILE
+            // Parse JSON
+            // JsonParseUploader(file);
+        } else if (strType == @"text/xml")
+        {
+            // TODO
+            // GET FILE
+            try
+            {
+                Stream stream = await S3Client.GetObjectStreamAsync(bucketName, objectKey, null);
+
+                string content;
+
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    content = reader.ReadToEnd();
+                    reader.Close();
+                }
+
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(content);
+            }
+            catch (Exception e)
+            {
+                context.Logger.LogInformation($"Error getting object {s3Event.Object.Key} from bucket {s3Event.Bucket.Name}. Make sure they exist and your bucket is in the same region as this function.");
+                context.Logger.LogInformation(e.Message);
+                context.Logger.LogInformation(e.StackTrace);
+                throw;
+            }
+            // TODO
+            // Parse XML
+            // XmlParseUploader(file);
+        }
+        else
+        {
+            throw new Exception("File not of correct type xml or json.");
+        }
+
         try
         {
             var response = await this.S3Client.GetObjectMetadataAsync(s3Event.Bucket.Name, s3Event.Object.Key);
@@ -58,5 +113,71 @@ public class Function
             context.Logger.LogInformation(e.StackTrace);
             throw;
         }
+    }
+
+    private async Task XmlParseUploader()
+    {
+        //TODO
+        // Parse XML
+
+        // Create NpgsqlConnection and upload using 
+        // var cmd = new NpgsqlCommand(@"INSERT INTO ... VALUES ...")
+
+        // cmd.ExecuteNonQuery();
+
+        // conn.Close();
+        // conn.Dispose();
+    }
+
+    private async Task JsonParseUploader()
+    {
+        //TODO
+        // Parse JSON
+        try
+        {
+            // Create NpgsqlConnection and upload using 
+            NpgsqlConnection conn = OpenConnection();
+            // var cmd = new NpgsqlCommand(@"INSERT INTO ... VALUES ...");
+
+            if (conn.State == ConnectionState.Open)
+            {
+                // cmd.ExecuteNonQuery();
+
+                // conn.Close();
+                // conn.Dispose();
+
+            }
+            else
+            {
+                Console.WriteLine("Failed to open a connection to the database. Connection state: {0}",
+                    Enum.GetName(typeof(ConnectionState), conn.State));
+            }
+
+        }
+        catch (NpgsqlException e)
+        {
+            Console.WriteLine("Npgsql Error: {0}", e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Error: {0}", e.Message);
+        }
+    }
+
+    private NpgsqlConnection OpenConnection()
+    {
+        // TODO
+        // Update endpoint and other parameters to vax DB
+        string endpoint = "mod12pginstance.cytiilpumzjl.us-east-1.rds.amazonaws.com";
+
+        string connString = "Server=" + endpoint + ";" +
+                            "port=5432;" +
+                            "Database=SalesDB;" +
+                            "User ID=postgres;" +
+                            "password=cs455pass;" +
+                            "Timeout=15";
+        NpgsqlConnection conn = new NpgsqlConnection(connString);
+        conn.Open();
+        return conn;
     }
 }
