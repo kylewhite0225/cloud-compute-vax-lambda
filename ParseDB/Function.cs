@@ -9,6 +9,7 @@ using System.Text;
 using Npgsql;
 using System.Data;
 using System.Text.Json;
+using System.Xml.Serialization;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -64,84 +65,55 @@ public class Function
         // Get the object itself from S3 so we can parse it, we did this in Module 10
 
         // If the type of the object is json or xml
-        if (strType == @"text/json")
+        // TODO 
+        // GET FILE using the process outlined in Module 10
+        try
         {
-            // TODO 
-            // GET FILE using the process outlined in Module 10
-            try
+            // Create stream to get object from S3
+            Stream stream = await S3Client.GetObjectStreamAsync(bucketName, objectKey, null);
+
+            // Create jsonString string which will contain the contents of the file itself
+            string fileContent;
+
+            // Using StreamReader and the previously created stream
+            using (StreamReader reader = new StreamReader(stream))
             {
-                // Create stream to get object from S3
-                Stream stream = await S3Client.GetObjectStreamAsync(bucketName, objectKey, null);
+                // Populate the jsonString string
+                fileContent = reader.ReadToEnd();
+                // Close reader
+                reader.Close();
+            }
 
-                // Create jsonString string which will contain the contents of the file itself
-                string jsonString;
-
-                // Using StreamReader and the previously created stream
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    // Populate the jsonString string
-                    jsonString = reader.ReadToEnd();
-                    // Close reader
-                    reader.Close();
-                }
-
+            VaxRecord vaxRecord = null;
+            if (strType == @"text/json")
+            {
                 // Use JsonSerializerOptions to format the JSON
                 JsonSerializerOptions options = new JsonSerializerOptions();
                 options.WriteIndented = true; // to make the JSON look pretty
 
-                // Pass string into JsonParseUploader method
-                JsonParseUploader(jsonString);
+                vaxRecord = ParseJsonVaxRecord(fileContent);
             }
-            catch (Exception e)
+            else if (strType == @"text/xml")
             {
-                context.Logger.LogInformation($"Error getting object {s3Event.Object.Key} from bucket {s3Event.Bucket.Name}. Make sure they exist and your bucket is in the same region as this function.");
-                context.Logger.LogInformation(e.Message);
-                context.Logger.LogInformation(e.StackTrace);
-                throw;
-            }
-
-
-        } else if (strType == @"text/xml")
-        {
-            // TODO
-            // GET FILE using the process outlined in Module 10
-            try
-            {
-                // Create stream to get object from S3
-                Stream stream = await S3Client.GetObjectStreamAsync(bucketName, objectKey, null);
-
-                // Create content string which will contain the contents of the file itself
-                string content;
-
-                // Using StreamReader and the previously created stream
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    // Populate the content string
-                    content = reader.ReadToEnd();
-                    // Close reader
-                    reader.Close();
-                }
-
                 // Create new XML document and load with content
-                XmlDocument doc = new XmlDocument();
-                doc.LoadXml(content);
-            }
-            catch (Exception e)
-            {
-                context.Logger.LogInformation($"Error getting object {s3Event.Object.Key} from bucket {s3Event.Bucket.Name}. Make sure they exist and your bucket is in the same region as this function.");
-                context.Logger.LogInformation(e.Message);
-                context.Logger.LogInformation(e.StackTrace);
-                throw;
-            }
-            // TODO
-            // Parse XML
-            // XmlParseUploader(doc);
-        }
-        else
-        {
-            throw new Exception("File not of correct type xml or json.");
-        }
 
+                vaxRecord = ParseXmlVaxRecord(stream);
+            }
+            else
+            {
+                throw new Exception("File not of correct type xml or json.");
+            }
+
+            UploadVaxRecordToDB(vaxRecord).Wait();
+        }
+        catch (Exception e)
+        {
+            context.Logger.LogInformation($"Error getting object {s3Event.Object.Key} from bucket {s3Event.Bucket.Name}. Make sure they exist and your bucket is in the same region as this function.");
+            context.Logger.LogInformation(e.Message);
+            context.Logger.LogInformation(e.StackTrace);
+            throw;
+        }
+        
         try
         {
             var response = await this.S3Client.GetObjectMetadataAsync(s3Event.Bucket.Name, s3Event.Object.Key);
@@ -159,77 +131,92 @@ public class Function
     /// <summary>
     /// Parses the XML file obtained from the s3Event and inserts the data into RDS using Npgsql.
     /// </summary>
-    private async Task XmlParseUploader(XmlDocument doc)
+    private VaxRecord ParseXmlVaxRecord(Stream xmlDocument)
     {
-        //TODO
-        // Parse XML
+        VaxRecord? vaxRecord = null;
+        try
+        {
+            // Use JsonSerializer to deserialize the JSON string into a VaxRecord object
+            XmlSerializer serializer = new XmlSerializer(typeof(VaxRecord));
+            serializer.Deserialize(xmlDocument);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
 
-        // Create NpgsqlConnection and upload using 
-        // var cmd = new NpgsqlCommand(@"INSERT INTO sites VALUES siteid name zipcode");
-        // var cmd2 = new NpgsqlCommand(@"INSERT INTO data VALUES siteid date firstshot secondshot");
+        if (vaxRecord == null)
+        {
+            throw new Exception("Vax Record was null");
+        }
 
-        // cmd.ExecuteNonQuery();
-
-        // conn.Close();
-        // conn.Dispose();
+        return vaxRecord;
     }
 
     /// <summary>
     /// Parses the JSON file obtained from the s3Event and inserts the data into RDS using Npgsql.
     /// </summary>
-    private async Task JsonParseUploader(string doc)
+    private VaxRecord ParseJsonVaxRecord(string doc)
     {
-        // TODO
-        // Parse JSON and form SQL command
-
+        VaxRecord? vaxRecord = null;
         try
         {
             // Use JsonSerializer to deserialize the JSON string into a VaxRecord object
-            VaxRecord vax = JsonSerializer.Deserialize<VaxRecord>(doc);
-
-            // Form NpgsqlCommand using the VaxRecord object members
-            string command = String.Format("INSERT INTO sites VALUES {0} {1} {2}", vax.SideID, vax.Name, vax.ZipCode);
-            var cmd = new NpgsqlCommand(command);
-
-            // Form second NpgsqlCommand using the VaxRecord object members
-            string command2 = String.Format("INSERT INTO data VALUES {0} {1} {2} {3}", vax.SideID, vax.Date, vax.FirstShot,
-                vax.SecondShot);
-            var cmd2 = new NpgsqlCommand(command2);
-            try
-            {
-                // Create NpgsqlConnection
-                NpgsqlConnection conn = OpenConnection();
-
-                // If connection was successful
-                if (conn.State == ConnectionState.Open)
-                {
-                    // Execute the command 
-                    cmd.ExecuteNonQuery();
-                    cmd2.ExecuteNonQuery();
-
-                    // Close and dispose of the connection
-                    conn.Close();
-                    conn.Dispose();
-                }
-                else
-                {
-                    Console.WriteLine("Failed to open a connection to the database. Connection state: {0}",
-                        Enum.GetName(typeof(ConnectionState), conn.State));
-                }
-
-            }
-            catch (NpgsqlException e)
-            {
-                Console.WriteLine("Npgsql Error: {0}", e.Message);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Error: {0}", e.Message);
-            }
+            vaxRecord = JsonSerializer.Deserialize<VaxRecord?>(doc);
         }
         catch (Exception e)
         {
             Console.WriteLine(e.Message);
+        }
+
+        if (vaxRecord == null)
+        {
+            throw new InvalidOperationException("Vax Record was null.");
+        }
+
+        return vaxRecord;
+    }
+
+    private async Task UploadVaxRecordToDB(VaxRecord record)
+    {
+        // Form NpgsqlCommand using the VaxRecord object members
+        string command = String.Format("INSERT INTO sites VALUES {0} {1} {2}", record.SideID, record.Name, record.ZipCode);
+        var cmd = new NpgsqlCommand(command);
+
+        // Form second NpgsqlCommand using the VaxRecord object members
+        string command2 = String.Format("INSERT INTO data VALUES {0} {1} {2} {3}", record.SideID, record.Date, record.FirstShot,
+            record.SecondShot);
+        var cmd2 = new NpgsqlCommand(command2);
+        try
+        {
+            // Create NpgsqlConnection
+            NpgsqlConnection conn = OpenConnection();
+
+            // If connection was successful
+            if (conn.State == ConnectionState.Open)
+            {
+                // Execute the command 
+                await cmd.ExecuteNonQueryAsync();
+                await cmd2.ExecuteNonQueryAsync();
+
+                // Close and dispose of the connection
+                conn.Close();
+                conn.Dispose();
+            }
+            else
+            {
+                Console.WriteLine("Failed to open a connection to the database. Connection state: {0}",
+                    Enum.GetName(typeof(ConnectionState), conn.State));
+            }
+
+        }
+        catch (NpgsqlException e)
+        {
+            Console.WriteLine("Npgsql Error: {0}", e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Error: {0}", e.Message);
         }
     }
 
