@@ -1,15 +1,27 @@
+
 {
-  "Information": [
-    "This file provides default values for the deployment wizard inside Visual Studio and the AWS Lambda commands added to the .NET Core CLI.",
-    "To learn more about the Lambda commands with the .NET Core CLI execute the following command at the command line in the project root directory.",
-    "dotnet lambda help",
-    "All the command line options for the Lambda command can be specified in this file."
-  ],
-  "profile": "default",
-  "region": "us-east-1",
-  "configuration": "Release",
-  "function-runtime": "dotnet6",
-  "function-memory-size": 256,
-  "function-timeout": 30,
-  "function-handler": "ParseDB::ParseDB.Function::FunctionHandler"
+    "Information" : [
+        "This file provides default values for the deployment wizard inside Visual Studio and the AWS Lambda commands added to the .NET Core CLI.",
+        "To learn more about the Lambda commands with the .NET Core CLI execute the following command at the command line in the project root directory.",
+        "dotnet lambda help",
+        "All the command line options for the Lambda command can be specified in this file."
+    ],
+    "profile"     : "default",
+    "region"      : "us-east-1",
+    "configuration" : "Release",
+    "function-runtime" : "dotnet6",
+    "function-memory-size" : 256,
+    "function-timeout"     : 30,
+    "function-handler"     : "ParseDB::ParseDB.Function::FunctionHandler",
+    "framework"            : "net6.0",
+    "function-name"        : "ParseDB",
+    "package-type"         : "Zip",
+    "function-role"        : "arn:aws:iam::758232842797:role/LabRole",
+    "function-architecture" : "x86_64",
+    "function-subnets"      : "subnet-0e732de8e8e7d7423,subnet-0d4c31ea2b9bbc91d,subnet-06db644d4d30b5d62,subnet-0f83430971db35fff,subnet-093da0cc3b3cabbcd,subnet-00a0ed7500945da86",
+    "function-security-groups" : "sg-0489881d71736ec2c",
+    "tracing-mode"             : "PassThrough",
+    "environment-variables"    : "",
+    "image-tag"                : "",
+    "function-description"     : ""
 }

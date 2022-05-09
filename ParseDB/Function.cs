@@ -57,9 +57,11 @@ public class Function
         string bucketName = s3Event.Bucket.Name;
         string objectKey = s3Event.Object.Key;
         // vvv This might have to change to GetObjectTaggingRequest vvv
-        Type objectType = s3Event.Object.GetType();
-        string strType = objectType.ToString();
-        // ^^^                                                      ^^^
+        // Type objectType = s3Event.Object.GetType();
+        // string strType = objectType.ToString();
+
+        string[] keyArray = objectKey.Split('.');
+        string strType = keyArray[1];
 
         // TODO
         // Get the object itself from S3 so we can parse it, we did this in Module 10
@@ -84,16 +86,19 @@ public class Function
                 reader.Close();
             }
 
+            Console.WriteLine(strType);
+
             VaxRecord vaxRecord = null;
-            if (strType == @"text/json")
+            if (strType == @"json")
             {
                 // Use JsonSerializerOptions to format the JSON
                 JsonSerializerOptions options = new JsonSerializerOptions();
                 options.WriteIndented = true; // to make the JSON look pretty
+                options.PropertyNameCaseInsensitive = true; // ignore case
 
                 vaxRecord = ParseJsonVaxRecord(fileContent);
             }
-            else if (strType == @"text/xml")
+            else if (strType == @"xml")
             {
                 // Create new XML document and load with content
 
@@ -158,11 +163,15 @@ public class Function
     /// </summary>
     private VaxRecord ParseJsonVaxRecord(string doc)
     {
+        Console.WriteLine(doc);
         VaxRecord? vaxRecord = null;
         try
         {
+
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.PropertyNameCaseInsensitive = true; // ignore case
             // Use JsonSerializer to deserialize the JSON string into a VaxRecord object
-            vaxRecord = JsonSerializer.Deserialize<VaxRecord?>(doc);
+            vaxRecord = JsonSerializer.Deserialize<VaxRecord?>(doc, options);
         }
         catch (Exception e)
         {
@@ -179,13 +188,28 @@ public class Function
 
     private async Task UploadVaxRecordToDB(VaxRecord record)
     {
+        
+        Console.WriteLine("INSERT INTO sites VALUES {0} {1} {2}", record.Site.Id, record.Site.Name, record.Site.Zipcode);
         // Form NpgsqlCommand using the VaxRecord object members
-        string command = String.Format("INSERT INTO sites VALUES {0} {1} {2}", record.SideID, record.Name, record.ZipCode);
+        string command = String.Format("INSERT INTO sites VALUES ('{0}', '{1}', '{2}') ON CONFLICT DO NOTHING", record.Site.Id, record.Site.Name, record.Site.Zipcode);
         var cmd = new NpgsqlCommand(command);
 
+        // Formulate date command from VaxRecord Date object
+        string date = record.Date.Year + "-" + record.Date.Month + "-" + record.Date.Day;
+        // Gather firstShot and secondShot counts from the array of Vaccines objects in the VaxRecord object
+        int firstShot = 0;
+        int secondShot = 0;
+        foreach (Vaccines x in record.Vaccines)
+        {
+            firstShot += x.FirstShot;
+            secondShot += x.SecondShot;
+        }
+
+        Console.WriteLine("INSERT INTO data VALUES {0} {1} {2} {3}", record.Site.Id, record.Date, firstShot,
+            secondShot);
         // Form second NpgsqlCommand using the VaxRecord object members
-        string command2 = String.Format("INSERT INTO data VALUES {0} {1} {2} {3}", record.SideID, record.Date, record.FirstShot,
-            record.SecondShot);
+        string command2 = String.Format("INSERT INTO data VALUES ('{0}', '{1}', '{2}', '{3}') ON CONFLICT UPDATE", record.Site.Id, date, firstShot,
+            secondShot);
         var cmd2 = new NpgsqlCommand(command2);
         try
         {
@@ -195,8 +219,10 @@ public class Function
             // If connection was successful
             if (conn.State == ConnectionState.Open)
             {
-                // Execute the command 
+                // Execute the command
+                cmd.Connection = conn;
                 await cmd.ExecuteNonQueryAsync();
+                cmd2.Connection = conn;
                 await cmd2.ExecuteNonQueryAsync();
 
                 // Close and dispose of the connection
@@ -227,13 +253,13 @@ public class Function
     {
         // TODO
         // vvv Update endpoint and other parameters to vax DB vvv
-        string endpoint = "mod12pginstance.cytiilpumzjl.us-east-1.rds.amazonaws.com";
+        string endpoint = "vaccinedatabase.cytiilpumzjl.us-east-1.rds.amazonaws.com";
 
         string connString = "Server=" + endpoint + ";" +
                             "port=5432;" +
-                            "Database=SalesDB;" +
+                            "Database=VaccineDB;" +
                             "User ID=postgres;" +
-                            "password=cs455pass;" +
+                            "password=cs455vaccine;" +
                             "Timeout=15";
         // ^^^                                                ^^^
         

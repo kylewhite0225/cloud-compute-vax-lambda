@@ -8,39 +8,22 @@ namespace ParseDB;
 
 public class VaxRecord
 {
-    public String SideID
+    public Site Site
+    {
+        get;
+        set;
+    }
+    
+    public Date Date
     {
         get;
         set;
     }
 
-    public String Name
+    public Vaccines[] Vaccines
     {
         get;
         set;
     }
 
-    public String ZipCode
-    {
-        get;
-        set;
-    }
-
-    public String Date
-    {
-        get;
-        set;
-    }
-
-    public int FirstShot
-    {
-        get;
-        set;
-    }
-
-    public int SecondShot
-    {
-        get;
-        set;
-    }
 }
