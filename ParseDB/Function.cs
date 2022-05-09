@@ -66,8 +66,6 @@ public class Function
         // TODO
         // Get the object itself from S3 so we can parse it, we did this in Module 10
 
-        // If the type of the object is json or xml
-        // TODO 
         // GET FILE using the process outlined in Module 10
         try
         {
@@ -88,27 +86,24 @@ public class Function
 
             Console.WriteLine(strType);
 
+            // If the type of the object is json or xml
             VaxRecord vaxRecord = null;
             if (strType == @"json")
             {
-                // Use JsonSerializerOptions to format the JSON
-                JsonSerializerOptions options = new JsonSerializerOptions();
-                options.WriteIndented = true; // to make the JSON look pretty
-                options.PropertyNameCaseInsensitive = true; // ignore case
-
+                // Use ParseJsonVaxRecord method to create a VaxRecord object containing information from the Json
                 vaxRecord = ParseJsonVaxRecord(fileContent);
             }
             else if (strType == @"xml")
             {
-                // Create new XML document and load with content
-
+                // Use ParseXmlVaxRecord method to create a VaxRecord object containing information from the XML
                 vaxRecord = ParseXmlVaxRecord(stream);
             }
             else
             {
                 throw new Exception("File not of correct type xml or json.");
             }
-
+            
+            // Use UploadVaxRecordToDB method to upload the VaxRecord object to our PostgreSQL database
             UploadVaxRecordToDB(vaxRecord).Wait();
         }
         catch (Exception e)
@@ -167,7 +162,7 @@ public class Function
         VaxRecord? vaxRecord = null;
         try
         {
-
+            // Use JsonSerializerOptions object to allow ignoring case of JSON elements
             JsonSerializerOptions options = new JsonSerializerOptions();
             options.PropertyNameCaseInsensitive = true; // ignore case
             // Use JsonSerializer to deserialize the JSON string into a VaxRecord object
@@ -175,6 +170,8 @@ public class Function
         }
         catch (Exception e)
         {
+            // TODO
+            // Does this catch if the JSON is not well formed?
             Console.WriteLine(e.Message);
         }
 
@@ -189,13 +186,13 @@ public class Function
     private async Task UploadVaxRecordToDB(VaxRecord record)
     {
         
-        Console.WriteLine("INSERT INTO sites VALUES {0} {1} {2}", record.Site.Id, record.Site.Name, record.Site.Zipcode);
-        // Form NpgsqlCommand using the VaxRecord object members
+        // Form NpgsqlCommand to add site information to DB using the VaxRecord object members, ignore if the site already exists (on conflict do nothing)
         string command = String.Format("INSERT INTO sites VALUES ('{0}', '{1}', '{2}') ON CONFLICT DO NOTHING", record.Site.Id, record.Site.Name, record.Site.Zipcode);
         var cmd = new NpgsqlCommand(command);
 
         // Formulate date command from VaxRecord Date object
         string date = record.Date.Year + "-" + record.Date.Month + "-" + record.Date.Day;
+        
         // Gather firstShot and secondShot counts from the array of Vaccines objects in the VaxRecord object
         int firstShot = 0;
         int secondShot = 0;
@@ -205,12 +202,13 @@ public class Function
             secondShot += x.SecondShot;
         }
 
-        Console.WriteLine("INSERT INTO data VALUES {0} {1} {2} {3}", record.Site.Id, record.Date, firstShot,
-            secondShot);
-        // Form second NpgsqlCommand using the VaxRecord object members
+        // Form second NpgsqlCommand using the VaxRecord object members to add vaccine counts and date to DB
+        // update if the record already exists for correcting errors
         string command2 = String.Format("INSERT INTO data VALUES ('{0}', '{1}', '{2}', '{3}') ON CONFLICT UPDATE", record.Site.Id, date, firstShot,
             secondShot);
         var cmd2 = new NpgsqlCommand(command2);
+        
+        // Upload to DB
         try
         {
             // Create NpgsqlConnection
@@ -219,7 +217,7 @@ public class Function
             // If connection was successful
             if (conn.State == ConnectionState.Open)
             {
-                // Execute the command
+                // Execute the commands
                 cmd.Connection = conn;
                 await cmd.ExecuteNonQueryAsync();
                 cmd2.Connection = conn;
@@ -234,7 +232,6 @@ public class Function
                 Console.WriteLine("Failed to open a connection to the database. Connection state: {0}",
                     Enum.GetName(typeof(ConnectionState), conn.State));
             }
-
         }
         catch (NpgsqlException e)
         {
@@ -251,18 +248,18 @@ public class Function
     /// </summary>
     private NpgsqlConnection OpenConnection()
     {
-        // TODO
-        // vvv Update endpoint and other parameters to vax DB vvv
+        // Vaccine DB endpoint on AWS RDS
         string endpoint = "vaccinedatabase.cytiilpumzjl.us-east-1.rds.amazonaws.com";
 
+        // Format the connection string
         string connString = "Server=" + endpoint + ";" +
                             "port=5432;" +
                             "Database=VaccineDB;" +
                             "User ID=postgres;" +
                             "password=cs455vaccine;" +
                             "Timeout=15";
-        // ^^^                                                ^^^
-        
+
+        // Create NpgsqlConnection object using connection string
         NpgsqlConnection conn = new NpgsqlConnection(connString);
         conn.Open();
         return conn;
