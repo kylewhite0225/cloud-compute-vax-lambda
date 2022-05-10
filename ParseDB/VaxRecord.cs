@@ -25,5 +25,4 @@ public class VaxRecord
         get;
         set;
     }
-
 }

@@ -51,7 +51,7 @@ public class Function
         var s3Event = evnt.Records?[0].S3;
         if(s3Event == null)
         {
-            return null;
+            throw new Exception("Event is null");
         }
 
         string bucketName = s3Event.Bucket.Name;
@@ -59,6 +59,8 @@ public class Function
         // vvv This might have to change to GetObjectTaggingRequest vvv
         // Type objectType = s3Event.Object.GetType();
         // string strType = objectType.ToString();
+        
+        Console.WriteLine("Bucket and object key: {0}, {1}", bucketName, objectKey);
 
         string[] keyArray = objectKey.Split('.');
         string strType = keyArray[1];
@@ -70,11 +72,13 @@ public class Function
         try
         {
             // Create stream to get object from S3
+            Console.WriteLine("Create stream object with GetObjectStreamAsync");
             Stream stream = await S3Client.GetObjectStreamAsync(bucketName, objectKey, null);
-
+            
             // Create jsonString string which will contain the contents of the file itself
             string fileContent;
 
+            Console.WriteLine("Use StreamReader");
             // Using StreamReader and the previously created stream
             using (StreamReader reader = new StreamReader(stream))
             {
@@ -84,17 +88,19 @@ public class Function
                 reader.Close();
             }
 
-            Console.WriteLine(strType);
+            Console.WriteLine("Stream reader completed populating file content.");
 
             // If the type of the object is json or xml
             VaxRecord vaxRecord = null;
             if (strType == @"json")
             {
+                Console.WriteLine("Parsing JSON");
                 // Use ParseJsonVaxRecord method to create a VaxRecord object containing information from the Json
                 vaxRecord = ParseJsonVaxRecord(fileContent);
             }
             else if (strType == @"xml")
             {
+                Console.WriteLine("Parsing XML");
                 // Use ParseXmlVaxRecord method to create a VaxRecord object containing information from the XML
                 vaxRecord = ParseXmlVaxRecord(stream);
             }
@@ -102,7 +108,8 @@ public class Function
             {
                 throw new Exception("File not of correct type xml or json.");
             }
-            
+
+            Console.WriteLine("Uploading to DB");
             // Use UploadVaxRecordToDB method to upload the VaxRecord object to our PostgreSQL database
             UploadVaxRecordToDB(vaxRecord).Wait();
         }
@@ -136,6 +143,7 @@ public class Function
         VaxRecord? vaxRecord = null;
         try
         {
+            Console.WriteLine("Serialize XML");
             // Use JsonSerializer to deserialize the JSON string into a VaxRecord object
             XmlSerializer serializer = new XmlSerializer(typeof(VaxRecord));
             serializer.Deserialize(xmlDocument);
@@ -158,10 +166,11 @@ public class Function
     /// </summary>
     private VaxRecord ParseJsonVaxRecord(string doc)
     {
-        Console.WriteLine(doc);
+        // Console.WriteLine(doc);
         VaxRecord? vaxRecord = null;
         try
         {
+            Console.WriteLine("Serializing JSON");
             // Use JsonSerializerOptions object to allow ignoring case of JSON elements
             JsonSerializerOptions options = new JsonSerializerOptions();
             options.PropertyNameCaseInsensitive = true; // ignore case
@@ -204,25 +213,30 @@ public class Function
 
         // Form second NpgsqlCommand using the VaxRecord object members to add vaccine counts and date to DB
         // update if the record already exists for correcting errors
-        string command2 = String.Format("INSERT INTO data VALUES ('{0}', '{1}', '{2}', '{3}') ON CONFLICT UPDATE", record.Site.Id, date, firstShot,
+        string command2 = String.Format("INSERT INTO data VALUES ('{0}', '{1}', '{2}', '{3}') ON CONFLICT (siteid) DO UPDATE SET firstshot = EXCLUDED.firstshot, secondshot = EXCLUDED.secondshot", record.Site.Id, date, firstShot,
             secondShot);
         var cmd2 = new NpgsqlCommand(command2);
-        
+
+        Console.WriteLine("Commands formulated.");
+
         // Upload to DB
         try
         {
+            Console.WriteLine("Opening connection");
             // Create NpgsqlConnection
             NpgsqlConnection conn = OpenConnection();
 
             // If connection was successful
             if (conn.State == ConnectionState.Open)
             {
+                Console.WriteLine("Sending commands");
                 // Execute the commands
                 cmd.Connection = conn;
                 await cmd.ExecuteNonQueryAsync();
                 cmd2.Connection = conn;
                 await cmd2.ExecuteNonQueryAsync();
 
+                Console.WriteLine("Closing connection");
                 // Close and dispose of the connection
                 conn.Close();
                 conn.Dispose();
@@ -248,6 +262,7 @@ public class Function
     /// </summary>
     private NpgsqlConnection OpenConnection()
     {
+        Console.WriteLine("Accessing Endpoint");
         // Vaccine DB endpoint on AWS RDS
         string endpoint = "vaccinedatabase.cytiilpumzjl.us-east-1.rds.amazonaws.com";
 
@@ -262,6 +277,7 @@ public class Function
         // Create NpgsqlConnection object using connection string
         NpgsqlConnection conn = new NpgsqlConnection(connString);
         conn.Open();
+        Console.WriteLine("Connection open");
         return conn;
     }
 }
