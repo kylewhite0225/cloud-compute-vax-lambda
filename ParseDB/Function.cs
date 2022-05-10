@@ -74,6 +74,7 @@ public class Function
 
             // Create jsonString string which will contain the contents of the file itself
             string fileContent;
+                //"<data month=\"4\" day=\"22\" year=\"2021\"><site id=\"1000101\"><name>Bellevue Overlake Hospital</name><zipCode>98004</zipCode></site><vaccines>    <brand name=\"Pfizer\"> <total>630</total>        <firstShot>400</firstShot>        <secondtShot>230</secondtShot>    </brand>    <brand name=\"Moderna\"> <total>420</total>        <firstShot>300</firstShot>        <secondShot>120</secondShot>    </brand></vaccines></data>";
 
             // Using StreamReader and the previously created stream
             using (StreamReader reader = new StreamReader(stream))
@@ -136,9 +137,30 @@ public class Function
         VaxRecord? vaxRecord = null;
         try
         {
-            // Use JsonSerializer to deserialize the JSON string into a VaxRecord object
-            XmlSerializer serializer = new XmlSerializer(typeof(VaxRecord));
-            serializer.Deserialize(xmlDocument);
+            // Use xmlSerializer to deserialize the xml string into a VaxRecord object
+            XmlRootAttribute xRoot = new XmlRootAttribute();
+            xRoot.ElementName = "data";
+            xRoot.IsNullable = true;
+            XmlSerializer serializer = new XmlSerializer(typeof(XmlVaxRecord), xRoot);
+            var parsed = serializer.Deserialize(xmlDocument);
+            XmlVaxRecord xmlRecord = (XmlVaxRecord)parsed;
+            vaxRecord = new VaxRecord()
+            {
+                date = new Date()
+                {
+                    year = xmlRecord.year,
+                    month = xmlRecord.month,
+                    day = xmlRecord.day,
+                },
+                site = xmlRecord.site,
+            };
+
+            var list = new List<Vaccines>();
+            foreach (XmlVaccines vax in xmlRecord.vaccines)
+            {
+                list.Add(new Vaccines() { brand = vax.name, firstShot = vax.firstShot, secondShot = vax.secondShot, total = vax.total });
+            }
+            vaxRecord.vaccines = list.ToArray();
         }
         catch (Exception e)
         {
@@ -187,24 +209,24 @@ public class Function
     {
         
         // Form NpgsqlCommand to add site information to DB using the VaxRecord object members, ignore if the site already exists (on conflict do nothing)
-        string command = String.Format("INSERT INTO sites VALUES ('{0}', '{1}', '{2}') ON CONFLICT DO NOTHING", record.Site.Id, record.Site.Name, record.Site.Zipcode);
+        string command = String.Format("INSERT INTO sites VALUES ('{0}', '{1}', '{2}') ON CONFLICT DO NOTHING", record.site.id, record.site.name, record.site.zipCode);
         var cmd = new NpgsqlCommand(command);
 
         // Formulate date command from VaxRecord Date object
-        string date = record.Date.Year + "-" + record.Date.Month + "-" + record.Date.Day;
+        string date = record.date.year + "-" + record.date.month + "-" + record.date.day;
         
         // Gather firstShot and secondShot counts from the array of Vaccines objects in the VaxRecord object
         int firstShot = 0;
         int secondShot = 0;
-        foreach (Vaccines x in record.Vaccines)
+        foreach (Vaccines x in record.vaccines)
         {
-            firstShot += x.FirstShot;
-            secondShot += x.SecondShot;
+            firstShot += x.firstShot;
+            secondShot += x.secondShot;
         }
 
         // Form second NpgsqlCommand using the VaxRecord object members to add vaccine counts and date to DB
         // update if the record already exists for correcting errors
-        string command2 = String.Format("INSERT INTO data VALUES ('{0}', '{1}', '{2}', '{3}') ON CONFLICT UPDATE", record.Site.Id, date, firstShot,
+        string command2 = String.Format("INSERT INTO data VALUES ('{0}', '{1}', '{2}', '{3}') ON CONFLICT UPDATE", record.site.id, date, firstShot,
             secondShot);
         var cmd2 = new NpgsqlCommand(command2);
         

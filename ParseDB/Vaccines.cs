@@ -1,12 +1,26 @@
-﻿namespace ParseDB;
+﻿using System.Xml.Serialization;
+
+namespace ParseDB;
 
 public class Vaccines
 {
-    public String Brand { get; set; }
+    public String brand { get; set; }
 
-    public int Total { get; set; }
+    public int total { get; set; }
 
-    public int FirstShot { get; set; }
+    public int firstShot { get; set; }
 
-    public int SecondShot { get; set; }
+    public int secondShot { get; set; }
+}
+
+public class XmlVaccines
+{
+    [XmlAttribute]
+    public String name { get; set; }
+
+    public int total { get; set; }
+
+    public int firstShot { get; set; }
+
+    public int secondShot { get; set; }
 }

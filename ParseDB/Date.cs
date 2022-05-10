@@ -1,8 +1,12 @@
-﻿namespace ParseDB;
+﻿using System.Xml.Serialization;
+
+namespace ParseDB;
 
 public class Date
 {
-    public int Month { get; set; }
-    public int Day { get; set; }
-    public int Year { get; set; }
+    public int month { get; set; }
+
+    public int day { get; set; }
+
+    public int year { get; set; }
 }
