@@ -103,7 +103,7 @@ public class Function
             {
                 Console.WriteLine("Parsing XML");
                 // Use ParseXmlVaxRecord method to create a VaxRecord object containing information from the XML
-                vaxRecord = ParseXmlVaxRecord(stream);
+                vaxRecord = ParseXmlVaxRecord(new MemoryStream(ASCIIEncoding.UTF8.GetBytes(fileContent)));
             }
             else
             {

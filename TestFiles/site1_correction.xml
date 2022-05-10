@@ -7,7 +7,7 @@
         <brand name="Pfizer">
 	    <total>800</total>
             <firstShot>500</firstShot>
-            <secondtShot>300</secondtShot>
+            <secondShot>300</secondShot>
         </brand>
         <brand name="Moderna">
 	    <total>420</total>
