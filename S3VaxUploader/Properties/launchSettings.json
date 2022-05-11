@@ -2,7 +2,7 @@
   "profiles": {
     "S3VaxUploader": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\Kylew\\Desktop\\site1.xml xml"
+      "commandLineArgs": "\"C:\\Users\\Kylew\\Dropbox\\CS455 - Cloud Computing\\Projects\\Project 1\\TestFiles\\site2_pfizerOnly.xml\" xml"
     }
   }
 }

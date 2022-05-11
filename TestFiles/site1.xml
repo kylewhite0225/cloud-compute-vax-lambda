@@ -1,4 +1,4 @@
-<data month="4" day="22" year="2021">
+<data month="4" day="23" year="2021">
     <site id="1000101">
         <name>Bellevue Overlake Hospital</name>
         <zipCode>98004</zipCode>
@@ -7,7 +7,7 @@
         <brand name="Pfizer">
 	    <total>630</total>
             <firstShot>400</firstShot>
-            <secondtShot>230</secondtShot>
+            <secondShot>230</secondShot>
         </brand>
         <brand name="Moderna">
 	    <total>420</total>

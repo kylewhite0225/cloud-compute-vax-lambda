@@ -234,7 +234,7 @@ public class Function
 
         // Form second NpgsqlCommand using the VaxRecord object members to add vaccine counts and date to DB
         // update if the record already exists for correcting errors
-        string command2 = String.Format("INSERT INTO data VALUES ('{0}', '{1}', '{2}', '{3}') ON CONFLICT (siteid) DO UPDATE SET firstshot = EXCLUDED.firstshot, secondshot = EXCLUDED.secondshot", record.site.id, date, firstShot,
+        string command2 = String.Format("INSERT INTO data VALUES ('{0}', '{1}', '{2}', '{3}') ON CONFLICT (siteid, date) DO UPDATE SET firstshot = EXCLUDED.firstshot, secondshot = EXCLUDED.secondshot", record.site.id, date, firstShot,
             secondShot);
         var cmd2 = new NpgsqlCommand(command2);
 
